@@ -10,9 +10,7 @@ function updateStressMeta() {
   sv('stressAvg', avg ? avg.toFixed(1) : '--');
   sv('alertCnt', alerts);
   const ac = document.getElementById('alertCard');
-  const al = document.getElementById('alertLbl');
-  if (ac) { ac.style.background = alerts > 0 ? '#fff0f0' : ''; ac.style.borderColor = alerts > 0 ? '#fcc' : ''; }
-  if (al) al.style.color = alerts > 0 ? '#c44' : '';
+  if (ac) ac.classList.toggle('alert', alerts > 0);
 
   // 負荷が高い＝平均スコアが低い場所
   const la = LOCS.map(l => {

@@ -30,10 +30,11 @@ function updateMetrics() {
   const alerts = Object.values(smxData).filter(x => x.score <= STRESS_ALERT_MAX).length;
   sv('stressStatNum', alerts);
   const ss = document.getElementById('stressStat');
-  const sl = document.getElementById('stressStatLbl');
-  if (ss) ss.style.background   = alerts > 0 ? '#fff0f0' : '';
-  if (ss) ss.style.borderColor  = alerts > 0 ? '#fcc'    : '';
-  if (sl) sl.style.color        = alerts > 0 ? '#c44'    : '';
+  if (ss) ss.classList.toggle('alert', alerts > 0);
+  // Q1 件数も件数に応じてアラートとして強調
+  const q1 = tasks.filter(t => t.urgency && t.importance && t.status !== 'done').length;
+  const q1card = document.getElementById('q1Stat');
+  if (q1card) q1card.classList.toggle('alert', q1 > 0);
 }
 
 function renderMatrix() {

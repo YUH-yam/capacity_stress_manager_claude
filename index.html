@@ -58,15 +58,15 @@
       <div class="sub" id="weekCapL">/ 40h 上限</div>
       <div class="bar-wrap"><div class="bar" id="weekBar"></div></div>
     </div>
-    <div class="stat" id="q1Stat" style="background:#fff0f0;border-color:#fcc;">
-      <div class="label" style="color:#c44;">今すぐ対応</div>
-      <div class="value" style="color:#c44;" id="q1Cnt">--</div>
-      <div class="sub" style="color:#c44;">Q1タスク数</div>
+    <div class="stat" id="q1Stat">
+      <div class="label">今すぐ対応</div>
+      <div class="value" id="q1Cnt">--</div>
+      <div class="sub">Q1タスク数</div>
     </div>
     <div class="stat" id="stressStat">
       <div class="label" id="stressStatLbl">ストレス要ケア</div>
       <div class="value" id="stressStatNum">--</div>
-      <div class="sub" style="opacity:.7">スコア2以下</div>
+      <div class="sub">スコア2以下</div>
     </div>
   </div>
 
@@ -75,30 +75,28 @@
       <div style="font-size:13px;font-weight:500;margin-bottom:9px;">優先度マトリクス</div>
       <div style="text-align:center;font-size:10px;color:var(--text2);margin-bottom:3px;">↑ 重要度：高</div>
       <div class="mx-grid">
-        <div class="mx-cell" style="background:#eff6ff;">
-          <div class="title" style="color:#2563eb;">計画して実行</div>
+        <div class="mx-cell q-plan">
+          <div class="title">計画して実行</div>
           <div class="sub">重要·非緊急</div>
           <div id="q2t"></div>
         </div>
-        <div class="mx-cell" style="background:#fff0f0;">
-          <div class="title" style="color:#c44;">今すぐ対応</div>
+        <div class="mx-cell q-now">
+          <div class="title">今すぐ対応</div>
           <div class="sub">重要·緊急</div>
           <div id="q1t"></div>
         </div>
-        <div class="mx-cell" style="background:#f7f7f5;opacity:.75;">
-          <div class="title" style="color:var(--text2);">通常どおり</div>
+        <div class="mx-cell q-normal">
+          <div class="title">通常どおり</div>
           <div class="sub">非重要·非緊急</div>
           <div id="q4t"></div>
         </div>
-        <div class="mx-cell" style="background:#fffbeb;">
-          <div class="title" style="color:#b45309;">協力依頼</div>
+        <div class="mx-cell q-delegate">
+          <div class="title">協力依頼</div>
           <div class="sub">非重要·緊急</div>
           <div id="q3t"></div>
         </div>
       </div>
-      <div style="display:flex;justify-content:space-between;margin-top:3px;font-size:10px;color:var(--text2);">
-        <span>← 緊急度：低</span><span>緊急度：高 →</span>
-      </div>
+      <div class="mx-axis"><span>← 緊急度：低</span><span>緊急度：高 →</span></div>
     </div>
 
     <div class="card">
@@ -288,7 +286,7 @@
     </div>
   </div>
 
-  <div class="card" style="background:#fafaf8;">
+  <div class="card card-muted">
     <div style="font-size:13px;font-weight:500;margin-bottom:5px;">既定値をリセット</div>
     <div style="font-size:12px;color:var(--text2);margin-bottom:9px;">マスタ（カテゴリ・担当・項目）を初期状態に戻します。タスクや記録は削除されません。</div>
     <button class="danger" id="resetMastersBtn">マスタを初期化</button>
@@ -308,7 +306,7 @@
       <input type="text" id="gasUrlInput" placeholder="https://script.google.com/macros/s/…/exec"
         style="flex:1;min-width:260px;font-size:12px;">
       <button class="primary" id="saveGasUrlBtn">URLを保存</button>
-      <button id="clearGasUrlBtn" style="color:var(--red);border-color:#fcc;">クリア</button>
+      <button id="clearGasUrlBtn" class="danger">クリア</button>
     </div>
     <div style="display:flex;gap:8px;flex-wrap:wrap;">
       <button id="reloadBtn" style="font-size:12px;">🔄 Sheets から再読み込み</button>
@@ -345,7 +343,7 @@
       </label>
     </div>
   </div>
-  <div class="card" style="background:#f9f9f8;">
+  <div class="card card-muted">
     <div style="font-size:12px;font-weight:500;margin-bottom:8px;">出力プレビュー</div>
     <div style="font-size:12px;color:var(--text2);line-height:1.9;">
       <div>📊 <strong>ダッシュボード</strong>：KPIカード、優先度マトリクス、ストレスサマリー、カテゴリ別工数</div>

@@ -83,12 +83,12 @@ function renderTaskList() {
       <div class="task-body">
         <div class="task-title" style="${t.status==='done'?'text-decoration:line-through;opacity:.5;':''}">${escapeHTML(t.title)}</div>
         <div class="task-meta">
-          <span class="badge" style="background:${catColor}22;color:${catColor};">${escapeHTML(catLabel)}</span>
-          ${t.urgency    ? '<span class="badge" style="background:#fff0f0;color:#c44;">緊急</span>' : ''}
-          ${t.importance ? '<span class="badge" style="background:#eff6ff;color:#2563eb;">重要</span>' : ''}
-          <span style="font-size:11px;color:var(--text2);">${Number(t.effort).toFixed(1)}h</span>
-          ${owners.map(o => `<span class="badge" style="background:var(--bg2);color:var(--text2);border:1px solid var(--border);">👤${escapeHTML(o)}</span>`).join('')}
-          ${tagsArr.map(tg => `<span class="badge" style="background:#f0f0ff;color:#5050bb;">🏷${escapeHTML(tg)}</span>`).join('')}
+          <span class="badge badge-cat" style="background:${catColor}22;color:${catColor};">${escapeHTML(catLabel)}</span>
+          ${t.urgency    ? '<span class="badge badge-urgent">緊急</span>'    : ''}
+          ${t.importance ? '<span class="badge badge-important">重要</span>' : ''}
+          <span class="badge badge-effort">${Number(t.effort).toFixed(1)}h</span>
+          ${owners.map(o => `<span class="badge badge-owner">👤${escapeHTML(o)}</span>`).join('')}
+          ${tagsArr.map(tg => `<span class="badge badge-tag">🏷${escapeHTML(tg)}</span>`).join('')}
         </div>
         <div style="display:flex;align-items:center;gap:6px;margin-top:5px;">
           <div class="task-prog-bar" style="flex:1;"><div class="task-prog-fill" style="width:${prog}%;background:${progCol};"></div></div>

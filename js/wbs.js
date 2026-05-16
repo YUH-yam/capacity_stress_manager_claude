@@ -289,10 +289,10 @@ function renderWBSList(el) {
                 <span class="wbs-list-title" title="${escapeHTML(t.title)}">${escapeHTML(t.title)}</span>
               </div>
               <div class="wbs-list-badges">
-                <span class="badge" style="background:${stColor[t.status]}22;color:${stColor[t.status]};">${stLabel[t.status]}</span>
-                <span class="badge" style="background:${qCol}22;color:${qCol};font-weight:600;">${q}</span>
-                <span style="font-size:11px;color:var(--text2);">${Number(t.effort).toFixed(1)}h</span>
-                ${owners.map(o => `<span class="badge" style="background:var(--bg2);color:var(--text2);border:1px solid var(--border);">👤${escapeHTML(o)}</span>`).join('')}
+                <span class="badge badge-status-${t.status}">${stLabel[t.status]}</span>
+                <span class="badge badge-q-${q.toLowerCase()}">${q}</span>
+                <span class="badge badge-effort">${Number(t.effort).toFixed(1)}h</span>
+                ${owners.map(o => `<span class="badge badge-owner">👤${escapeHTML(o)}</span>`).join('')}
               </div>
               <div class="wbs-list-dates">
                 <span class="wbs-list-date-lbl">開始</span>${dayLabel(t.start, 'start')}
