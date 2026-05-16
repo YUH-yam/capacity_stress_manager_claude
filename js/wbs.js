@@ -135,9 +135,13 @@ function renderWBSGantt(el) {
 
       let chartContent = colBgs + gridLines + todayLine;
 
+      // 1日分の幅（%）。バー・ドット位置を「日付セルの中」に収めるために使う。
+      const DAY_W = 100 / TOTAL_DAYS;
+      // バーの左端 = 開始日の 0:00（= 開始日セルの左端）
+      // バーの右端 = 終了日の 23:59（= 終了日セルの右端 = 翌日セルの左端）
       const barFrom = parseFloat(pct(startOffset));
-      const barTo   = parseFloat(pct(endOffset));
-      const barW    = Math.max(0.5, Math.abs(barTo - barFrom));
+      const barTo   = parseFloat(pct(endOffset)) + DAY_W;
+      const barW    = Math.max(0.5, barTo - barFrom);
       const fillW   = barW * prog / 100;
 
       // 終了日の警告色
@@ -156,16 +160,17 @@ function renderWBSGantt(el) {
         <div style="position:absolute;left:${barFrom.toFixed(3)}%;width:${barW.toFixed(3)}%;height:8px;top:38%;background:${endCol}22;border-radius:4px;z-index:3;"></div>
         <div style="position:absolute;left:${barFrom.toFixed(3)}%;width:${fillW.toFixed(3)}%;height:8px;top:38%;background:${progCol}99;border-radius:4px;z-index:4;"></div>
       `;
-      // 開始マーカー
+      // 開始マーカー（◆）：開始日 0:00 を左端に固定 → マーカーは「日付セルの内側」へ右に張り出す
       if (hasStart) {
-        chartContent += `<div style="position:absolute;left:${barFrom.toFixed(3)}%;top:30%;transform:translateX(-50%);z-index:6;width:10px;height:10px;border-radius:50% 50% 50% 0;background:${CAT_COLORS[cat]};border:2px solid white;box-shadow:0 1px 2px rgba(0,0,0,.2);"></div>`;
+        chartContent += `<div style="position:absolute;left:${barFrom.toFixed(3)}%;top:30%;z-index:6;width:10px;height:10px;border-radius:50% 50% 50% 0;background:${CAT_COLORS[cat]};border:2px solid white;box-shadow:0 1px 2px rgba(0,0,0,.2);"></div>`;
       }
-      // 終了マーカー
+      // 終了マーカー（●）：終了日 23:59 を右端に固定 → マーカーは「日付セルの内側」へ左に張り出す
       if (hasEnd) {
-        chartContent += `<div style="position:absolute;left:${barTo.toFixed(3)}%;top:26%;transform:translateX(-50%);z-index:6;width:14px;height:14px;border-radius:50%;background:${endCol};border:2px solid white;box-shadow:0 1px 3px rgba(0,0,0,.3);"></div>`;
-        chartContent += `<div style="position:absolute;left:${barTo.toFixed(3)}%;top:calc(26% + 16px);transform:translateX(-50%);z-index:6;font-size:8px;color:${endCol};white-space:nowrap;font-weight:600;">${endLabel}</div>`;
+        chartContent += `<div style="position:absolute;left:${barTo.toFixed(3)}%;top:26%;transform:translateX(-100%);z-index:6;width:14px;height:14px;border-radius:50%;background:${endCol};border:2px solid white;box-shadow:0 1px 3px rgba(0,0,0,.3);"></div>`;
+        chartContent += `<div style="position:absolute;left:${barTo.toFixed(3)}%;top:calc(26% + 16px);transform:translateX(-100%);z-index:6;font-size:8px;color:${endCol};white-space:nowrap;font-weight:600;padding-right:2px;">${endLabel}</div>`;
       }
-      chartContent += `<div style="position:absolute;left:${barFrom.toFixed(3)}%;top:58%;font-size:8px;color:${progCol};font-weight:600;z-index:5;">${prog}%</div>`;
+      // 進捗ラベル：開始位置の少し右に置き、開始マーカーと被らないようにする
+      chartContent += `<div style="position:absolute;left:${barFrom.toFixed(3)}%;top:58%;font-size:8px;color:${progCol};font-weight:600;z-index:5;padding-left:${hasStart?14:0}px;">${prog}%</div>`;
 
       const q = t.urgency && t.importance ? 'Q1' : !t.urgency && t.importance ? 'Q2' : t.urgency ? 'Q3' : 'Q4';
       const qCol = q==='Q1'?'#c44':q==='Q2'?'#2563eb':q==='Q3'?'#b45309':'#888';
