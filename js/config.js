@@ -56,6 +56,22 @@ function defaultStress() {
   return d;
 }
 
+// ----- 工数ヘルパ（進捗率で按分） -----
+// - effort: タスクに設定された総工数（h）
+// - progress: 達成率（0〜100）
+// - remainingEffort: まだ残っている工数 = effort × (1 - progress/100)
+// - doneEffort: 既に消化した工数 = effort × (progress/100)
+function remainingEffort(t) {
+  const eff  = Number((t && t.effort) || 0);
+  const prog = Math.max(0, Math.min(100, Number((t && t.progress) || 0)));
+  return Math.max(0, eff * (1 - prog / 100));
+}
+function doneEffort(t) {
+  const eff  = Number((t && t.effort) || 0);
+  const prog = Math.max(0, Math.min(100, Number((t && t.progress) || 0)));
+  return Math.max(0, eff * (prog / 100));
+}
+
 function todayStr() {
   const n = new Date();
   return `${n.getMonth()+1}/${n.getDate()} ${n.getHours()}:${String(n.getMinutes()).padStart(2,'0')}`;

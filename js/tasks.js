@@ -86,7 +86,12 @@ function renderTaskList() {
           <span class="badge badge-cat" style="background:${catColor}22;color:${catColor};">${escapeHTML(catLabel)}</span>
           ${t.urgency    ? '<span class="badge badge-urgent">緊急</span>'    : ''}
           ${t.importance ? '<span class="badge badge-important">重要</span>' : ''}
-          <span class="badge badge-effort">${Number(t.effort).toFixed(1)}h</span>
+          <span class="effort-dual">
+            <span class="rem">${remainingEffort(t).toFixed(1)}h</span>
+            <span class="sep">/</span>
+            <span>${Number(t.effort).toFixed(1)}h</span>
+            ${prog > 0 ? `<span class="done">(完 ${doneEffort(t).toFixed(1)}h)</span>` : ''}
+          </span>
           ${owners.map(o => `<span class="badge badge-owner">👤${escapeHTML(o)}</span>`).join('')}
           ${tagsArr.map(tg => `<span class="badge badge-tag">🏷${escapeHTML(tg)}</span>`).join('')}
         </div>

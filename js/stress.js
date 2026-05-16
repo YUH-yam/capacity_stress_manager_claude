@@ -29,20 +29,26 @@ function updateStressMeta() {
 }
 
 function renderSmx() {
+  renderSmxTable();
+  renderSmxMobile();
+}
+
+// ----- PC（表）ビュー -----
+function renderSmxTable() {
   const table = document.getElementById('smxTable'); if (!table) return;
   let html = '<thead><tr><th class="row-head">場所 \\ 部位</th>';
   AREAS.forEach(a => {
     const sc = LOCS.map(l => smxData[`${l}_${a}`]?.score).filter(Boolean);
     const avg = sc.length ? sc.reduce((x,y)=>x+y,0)/sc.length : null;
     const col = avg ? SC[Math.round(avg)] : null;
-    html += `<th>${escapeHTML(a)}${avg ? `<br><span style="font-size:9px;color:${col};font-family:monospace;">${avg.toFixed(1)}</span>` : ''}</th>`;
+    html += `<th>${escapeHTML(a)}${avg ? `<br><span style="font-size:10px;color:${col};font-family:monospace;">${avg.toFixed(1)}</span>` : ''}</th>`;
   });
   html += '</tr></thead><tbody>';
   LOCS.forEach(loc => {
     const lsc = AREAS.map(a => smxData[`${loc}_${a}`]?.score).filter(Boolean);
     const lavg = lsc.length ? lsc.reduce((a,b)=>a+b,0)/lsc.length : null;
     const lcol = lavg ? SC[Math.round(lavg)] : null;
-    html += `<tr><th class="row-head">${escapeHTML(loc)}${lavg ? `<br><span style="font-size:9px;color:${lcol};font-family:monospace;font-weight:400;">${lavg.toFixed(1)}</span>` : ''}</th>`;
+    html += `<tr><th class="row-head">${escapeHTML(loc)}${lavg ? `<br><span style="font-size:10px;color:${lcol};font-family:monospace;font-weight:400;">${lavg.toFixed(1)}</span>` : ''}</th>`;
     AREAS.forEach(area => {
       const key = `${loc}_${area}`;
       const d = smxData[key];
@@ -54,8 +60,8 @@ function renderSmx() {
         html += `<div class="smx-score" style="background:${col}33;color:${col};">${s}</div>`;
         html += `<div class="smx-lbl">${SL[s]}</div>`;
       } else {
-        html += `<div class="smx-score" style="background:#eee;color:#aaa;font-size:16px;">+</div>`;
-        html += `<div class="smx-lbl" style="color:#bbb;">未記録</div>`;
+        html += `<div class="smx-score" style="background:var(--bg-tertiary);color:var(--label-tertiary);font-size:16px;">+</div>`;
+        html += `<div class="smx-lbl">未記録</div>`;
       }
       html += '</td>';
     });
@@ -63,6 +69,38 @@ function renderSmx() {
   });
   html += '</tbody>';
   table.innerHTML = html;
+}
+
+// ----- SP（場所カード）ビュー -----
+function renderSmxMobile() {
+  const wrap = document.getElementById('smxMobile'); if (!wrap) return;
+  wrap.innerHTML = LOCS.map(loc => {
+    const lsc = AREAS.map(a => smxData[`${loc}_${a}`]?.score).filter(Boolean);
+    const lavg = lsc.length ? lsc.reduce((a,b)=>a+b,0)/lsc.length : null;
+    const lcol = lavg ? SC[Math.round(lavg)] : 'var(--label-tertiary)';
+    const cells = AREAS.map(area => {
+      const key = `${loc}_${area}`;
+      const d = smxData[key];
+      const s = d?.score;
+      const col = s ? SC[s] : 'var(--label-tertiary)';
+      const isSel = selCell?.loc === loc && selCell?.area === area;
+      const scoreInner = s
+        ? `<div class="smx-score" style="background:${col}33;color:${col};">${s}</div>`
+        : `<div class="smx-score" style="background:var(--bg-tertiary);color:var(--label-tertiary);">+</div>`;
+      return `<div class="smx-loc-cell" onclick="selCellFn('${loc}','${area}')"
+                style="${isSel?`outline:2px solid ${col};`:''}">
+                ${scoreInner}
+                <div class="smx-area-lbl">${escapeHTML(area)}</div>
+              </div>`;
+    }).join('');
+    return `<div class="smx-loc-card">
+      <div class="smx-loc-head">
+        <div class="smx-loc-name">${escapeHTML(loc)}</div>
+        <div class="smx-loc-avg">${lavg ? `平均 <strong style="color:${lcol};">${lavg.toFixed(1)}</strong> · ${SL[Math.round(lavg)]}` : '記録なし'}</div>
+      </div>
+      <div class="smx-loc-grid">${cells}</div>
+    </div>`;
+  }).join('');
 }
 
 function selCellFn(loc, area) {
@@ -109,7 +147,9 @@ function closeEdit() {
 
 function renderSlog() {
   const el = document.getElementById('slogEl'); if (!el) return;
-  if (!slog.length) { el.innerHTML = '<div style="text-align:center;padding:1.5rem;color:var(--text2);">まだ記録がありません</div>'; return; }
+  const countEl = document.getElementById('slogCount');
+  if (countEl) countEl.textContent = slog.length ? `(${slog.length}件)` : '';
+  if (!slog.length) { el.innerHTML = '<div style="text-align:center;padding:var(--s-5);color:var(--label-secondary-op);">まだ記録がありません</div>'; return; }
   el.innerHTML = slog.slice(0, 15).map(e => {
     const col = SC[e.score];
     return `<div class="log-item">

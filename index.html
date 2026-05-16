@@ -47,16 +47,18 @@
 <div class="panel active" id="p-dash">
   <div class="stat-grid">
     <div class="stat">
-      <div class="label">今日の割当工数</div>
+      <div class="label">今日（残工数）</div>
       <div class="value" id="todayH">--h</div>
-      <div class="sub" id="todayCapL">/ 8h 上限</div>
+      <div class="sub" id="todayCapL">残 / 8h 上限</div>
       <div class="bar-wrap"><div class="bar" id="todayBar"></div></div>
+      <div class="sub" id="todayDone" style="color:var(--tint-green);font-weight:500;">完了 --h</div>
     </div>
     <div class="stat">
-      <div class="label">週次割当工数</div>
+      <div class="label">今週（残工数）</div>
       <div class="value" id="weekH">--h</div>
-      <div class="sub" id="weekCapL">/ 40h 上限</div>
+      <div class="sub" id="weekCapL">残 / 40h 上限</div>
       <div class="bar-wrap"><div class="bar" id="weekBar"></div></div>
+      <div class="sub" id="weekDone" style="color:var(--tint-green);font-weight:500;">完了 --h</div>
     </div>
     <div class="stat" id="q1Stat">
       <div class="label">今すぐ対応</div>
@@ -115,54 +117,57 @@
 <!-- ==================== TASKS ==================== -->
 <div class="panel" id="p-tasks">
   <div class="cap-row no-print">
-    <span style="font-size:12px;font-weight:500;color:var(--text2);">キャパシティ設定</span>
-    <label style="display:flex;align-items:center;gap:6px;font-size:13px;">日次:
-      <input type="number" id="dailyCap" value="8" min="0.1" max="24" step="0.1" style="width:60px;"> h
-    </label>
-    <label style="display:flex;align-items:center;gap:6px;font-size:13px;">週次:
-      <input type="number" id="weeklyCap" value="40" min="0.1" max="168" step="0.1" style="width:68px;"> h
-    </label>
+    <span class="cap-title">キャパシティ</span>
+    <label>日次<input type="number" id="dailyCap" value="8" min="0.1" max="24" step="0.1"> h</label>
+    <label>週次<input type="number" id="weeklyCap" value="40" min="0.1" max="168" step="0.1"> h</label>
   </div>
 
   <div class="card add-form-wrap no-print">
-    <div style="font-size:13px;font-weight:500;margin-bottom:9px;">新しいタスクを追加</div>
+    <div class="section-title">新しいタスクを追加</div>
     <div class="add-form">
-      <input type="text" id="tTitle" placeholder="タスク名を入力..." style="width:100%;">
       <div>
-        <div style="font-size:11px;color:var(--text2);margin-bottom:4px;">カテゴリ</div>
-        <select id="tCat" style="width:100%;"></select>
-      </div>
-      <div>
-        <div style="font-size:11px;color:var(--text2);margin-bottom:4px;">担当（複数選択可）</div>
-        <div class="multi-check-group" id="tOwners"></div>
-      </div>
-      <div>
-        <div style="font-size:11px;color:var(--text2);margin-bottom:4px;">項目（複数選択可）</div>
-        <div class="multi-check-group" id="tTags"></div>
-      </div>
-      <div style="display:flex;flex-wrap:wrap;gap:14px;align-items:center;">
-        <label style="display:flex;align-items:center;gap:6px;font-size:13px;"><input type="checkbox" id="tUrgent"> 緊急</label>
-        <label style="display:flex;align-items:center;gap:6px;font-size:13px;"><input type="checkbox" id="tImportant"> 重要</label>
-        <div style="display:flex;align-items:center;gap:6px;font-size:13px;">工数:
-          <input type="number" id="tEffort" min="0.1" max="40" step="0.1" value="1.0" style="width:60px;"> h
-        </div>
+        <label class="form-label">タスク名</label>
+        <input type="text" id="tTitle" placeholder="タスク名を入力...">
       </div>
       <div class="form-row">
         <div>
-          <div style="font-size:11px;color:var(--text2);margin-bottom:4px;">開始日</div>
-          <input type="date" id="tStart" style="width:100%;">
+          <label class="form-label">カテゴリ</label>
+          <select id="tCat"></select>
         </div>
         <div>
-          <div style="font-size:11px;color:var(--text2);margin-bottom:4px;">終了日</div>
-          <input type="date" id="tEnd" style="width:100%;">
+          <label class="form-label">工数（h）</label>
+          <input type="number" id="tEffort" min="0.1" max="40" step="0.1" value="1.0">
         </div>
       </div>
-      <div style="display:flex;align-items:center;gap:8px;font-size:13px;">
-        <span style="flex-shrink:0;">進捗率:</span>
-        <input type="range" id="tProgress" min="0" max="100" step="5" value="0" style="flex:1;accent-color:var(--green);">
-        <span id="tProgressVal" style="font-size:12px;color:var(--text2);width:32px;">0%</span>
+      <div>
+        <label class="form-label">担当（複数選択可）</label>
+        <div class="multi-check-group" id="tOwners"></div>
       </div>
-      <button class="primary" id="addTaskBtn">タスクを追加</button>
+      <div>
+        <label class="form-label">項目（複数選択可）</label>
+        <div class="multi-check-group" id="tTags"></div>
+      </div>
+      <div class="form-row">
+        <div>
+          <label class="form-label">開始日</label>
+          <input type="date" id="tStart">
+        </div>
+        <div>
+          <label class="form-label">終了日</label>
+          <input type="date" id="tEnd">
+        </div>
+      </div>
+      <div class="form-inline">
+        <label><input type="checkbox" id="tUrgent"> 緊急</label>
+        <label><input type="checkbox" id="tImportant"> 重要</label>
+      </div>
+      <div>
+        <label class="form-label">進捗率 <span id="tProgressVal" style="color:var(--label);font-weight:600;margin-left:6px;">0%</span></label>
+        <input type="range" id="tProgress" min="0" max="100" step="5" value="0">
+      </div>
+      <div class="add-form-actions">
+        <button class="primary" id="addTaskBtn">タスクを追加</button>
+      </div>
     </div>
   </div>
 
@@ -205,19 +210,19 @@
     </div>
     <div class="stat">
       <div class="label">最も負荷が高い場所</div>
-      <div class="value" style="font-size:15px;line-height:1.4;" id="topLoc">--</div>
+      <div class="value" style="font-size:var(--t-headline);line-height:1.3;" id="topLoc">--</div>
     </div>
     <div class="stat">
       <div class="label">最も負荷が高い部位</div>
-      <div class="value" style="font-size:15px;line-height:1.4;" id="topArea">--</div>
+      <div class="value" style="font-size:var(--t-headline);line-height:1.3;" id="topArea">--</div>
     </div>
   </div>
 
   <div class="card">
-    <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:11px;flex-wrap:wrap;gap:7px;">
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:var(--s-3);flex-wrap:wrap;gap:var(--s-2);">
       <div>
-        <div style="font-size:13px;font-weight:500;">ストレスマトリクス</div>
-        <div style="font-size:11px;color:var(--text2);margin-top:2px;">セルをクリックして記録・更新</div>
+        <div class="section-title" style="margin-bottom:2px;">ストレスマトリクス</div>
+        <div class="section-help">セルをタップして記録・更新</div>
       </div>
       <div class="s-legend">
         <span class="s-legend-item"><span class="s-dot" style="background:#1D9E75;"></span>4-5 良好</span>
@@ -228,6 +233,7 @@
     <div class="smx-wrap">
       <table class="smx-table" id="smxTable"></table>
     </div>
+    <div class="smx-mobile" id="smxMobile"></div>
   </div>
 
   <div class="edit-panel no-print" id="editPanel" style="display:none;">
@@ -241,10 +247,10 @@
     </div>
   </div>
 
-  <div class="card">
-    <div style="font-size:13px;font-weight:500;margin-bottom:9px;">記録ログ</div>
-    <div id="slogEl"></div>
-  </div>
+  <details class="log-card">
+    <summary><span>記録ログ <span style="color:var(--label-tertiary);font-weight:400;margin-left:4px;" id="slogCount"></span></span></summary>
+    <div class="log-body" id="slogEl"></div>
+  </details>
 </div>
 
 <!-- ==================== SETTINGS ==================== -->

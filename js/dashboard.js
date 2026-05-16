@@ -12,14 +12,23 @@ function sv(id, v) { const e = document.getElementById(id); if (e) e.textContent
 function updateMetrics() {
   const {d, w} = getCap();
   const myA = tasks.filter(t => (t.owners || []).includes('自分') && t.status !== 'done');
-  const te = myA.filter(t => t.urgency).reduce((s,t) => s + (Number(t.effort)||0), 0);
-  const we = myA.reduce((s,t) => s + (Number(t.effort)||0), 0);
-  const tp = d > 0 ? Math.min(te / d, 1) : 0;
-  const wp = w > 0 ? Math.min(we / w, 1) : 0;
-  sv('todayH', te.toFixed(1) + 'h');
-  sv('weekH',  we.toFixed(1) + 'h');
-  sv('todayCapL', '/ ' + d + 'h 上限');
-  sv('weekCapL',  '/ ' + w + 'h 上限');
+  // 工数は「残り＋完了」を進捗率で按分して集計
+  const todayRem  = myA.filter(t => t.urgency).reduce((s,t) => s + remainingEffort(t), 0);
+  const todayDone = myA.filter(t => t.urgency).reduce((s,t) => s + doneEffort(t), 0);
+  const weekRem   = myA.reduce((s,t) => s + remainingEffort(t), 0);
+  const weekDone  = myA.reduce((s,t) => s + doneEffort(t),      0);
+  // キャパシティバーは「残り」で評価する（取れる余裕＝Cap − 残）
+  const tp = d > 0 ? Math.min(todayRem / d, 1) : 0;
+  const wp = w > 0 ? Math.min(weekRem  / w, 1) : 0;
+
+  sv('todayH', todayRem.toFixed(1) + 'h');
+  sv('weekH',  weekRem.toFixed(1) + 'h');
+  const todayDoneEl = document.getElementById('todayDone');
+  const weekDoneEl  = document.getElementById('weekDone');
+  if (todayDoneEl) todayDoneEl.textContent = '完了 ' + todayDone.toFixed(1) + 'h';
+  if (weekDoneEl)  weekDoneEl.textContent  = '完了 ' + weekDone.toFixed(1) + 'h';
+  sv('todayCapL', '残 / ' + d + 'h 上限');
+  sv('weekCapL',  '残 / ' + w + 'h 上限');
   sv('weekUtil',  Math.round(wp * 100) + '%');
   sv('q1Cnt', tasks.filter(t => t.urgency && t.importance && t.status !== 'done').length);
   const tb = document.getElementById('todayBar');
