@@ -67,6 +67,12 @@ function wireEvents() {
     document.getElementById('importFile').click();
   });
   document.getElementById('importFile')?.addEventListener('change', importJSON);
+  // JSON テキスト貼り付け読込
+  document.getElementById('importJsonTextBtn')?.addEventListener('click', importJSONFromText);
+  document.getElementById('clearPasteJsonBtn')?.addEventListener('click', () => {
+    const ta = document.getElementById('pasteJsonText');
+    if (ta) ta.value = '';
+  });
   // 設定タブ
   document.getElementById('addCatBtn')?.addEventListener('click', addCat);
   document.getElementById('addOwnerBtn')?.addEventListener('click', addOwner);

@@ -179,6 +179,7 @@ input[type=text], input[type=number], input[type=date], select, textarea {
   outline: none;
   min-height: 36px;
 }
+textarea { line-height: 1.45; }
 input:focus, select:focus, textarea:focus { border-color: var(--text); }
 input[type=color] {
   -webkit-appearance: none;

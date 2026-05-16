@@ -43,37 +43,53 @@ function importJSON(event) {
   reader.onload = e => {
     try {
       const data = JSON.parse(e.target.result);
-      // マスタ
-      if (data.masters && typeof data.masters === 'object') {
-        if (Array.isArray(data.masters.categories) && data.masters.categories.length) {
-          categoryMaster = data.masters.categories.map(c => ({
-            key: String(c.key || c.label || ''),
-            label: String(c.label || c.key || ''),
-            color: String(c.color || '#888780')
-          })).filter(c => c.key && c.label);
-        }
-        if (Array.isArray(data.masters.owners)) ownerMaster = data.masters.owners.map(String);
-        if (Array.isArray(data.masters.tags))   tagMaster   = data.masters.tags.map(String);
-      }
-      // データ
-      if (Array.isArray(data.tasks)) tasks = data.tasks.map(normalizeTaskForUi);
-      if (data.smxData) smxData = normalizeStressForUi(data.smxData);
-      if (Array.isArray(data.slog)) slog = normalizeSlogForUi(data.slog);
-      // 設定
-      if (data.settings) {
-        const dc = document.getElementById('dailyCap');
-        const wc = document.getElementById('weeklyCap');
-        if (dc) dc.value = data.settings.daily  || 8;
-        if (wc) wc.value = data.settings.weekly || 40;
-      }
-      nid = tasks.length ? Math.max(...tasks.map(t => t.id)) + 1 : 1;
-      save();
-      saveSettings();
-      refreshAllContentFromState();
+      applyImportedData(data);
       alert('データを読み込みました。');
     } catch(err) {
       alert('読み込みに失敗しました: ' + err.message);
     }
   };
   reader.readAsText(file);
+}
+
+// JSON文字列を直接取り込む（JSONPに依存しない確実な読込パス）
+function importJSONFromText() {
+  const ta = document.getElementById('pasteJsonText');
+  const raw = (ta?.value || '').trim();
+  if (!raw) { alert('JSON テキストを貼り付けてください。'); return; }
+  let data;
+  try {
+    data = JSON.parse(raw);
+  } catch(err) {
+    alert('JSONとして解釈できませんでした：' + err.message);
+    return;
+  }
+  try {
+    applyImportedData(data);
+    if (ta) ta.value = '';
+    alert('JSONを読み込みました。');
+  } catch(err) {
+    alert('読み込みに失敗しました: ' + err.message);
+  }
+}
+
+// 共通：パース済みオブジェクトを状態に反映
+function applyImportedData(data) {
+  // applyRemoteData がカタログ・タスク・smx・slog すべてを正規化込みで取り込む
+  applyRemoteData(data);
+  // 設定
+  if (data.settings && typeof data.settings === 'object') {
+    const dc = document.getElementById('dailyCap');
+    const wc = document.getElementById('weeklyCap');
+    if (dc && data.settings.daily  !== undefined) dc.value = data.settings.daily;
+    if (wc && data.settings.weekly !== undefined) wc.value = data.settings.weekly;
+  }
+  // ID再採番
+  if (Array.isArray(tasks) && tasks.length) {
+    const max = Math.max(...tasks.map(t => Number(t.id) || 0));
+    if (Number.isFinite(max) && max + 1 > nid) nid = max + 1;
+  }
+  save();
+  saveSettings();
+  refreshAllContentFromState();
 }

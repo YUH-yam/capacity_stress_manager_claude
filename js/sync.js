@@ -165,9 +165,12 @@ async function syncToSheets(silent) {
   }
 }
 
+// 直近のJSONPロード失敗理由（UIに表示するためにグローバル保持）
+let lastLoadFailReason = '';
+
 function loadFromSheetsByJsonp() {
   return new Promise((resolve) => {
-    if (!gasUrl) { resolve(null); return; }
+    if (!gasUrl) { lastLoadFailReason = 'gasUrl未設定'; resolve(null); return; }
     const callbackName = 'csmSheetLoad_' + Date.now() + '_' + Math.random().toString(36).slice(2);
     const script = document.createElement('script');
     let done = false;
@@ -181,13 +184,35 @@ function loadFromSheetsByJsonp() {
 
     window[callbackName] = function(data) {
       cleanup();
-      if (!data || data.error || !data.tasks) { resolve(null); return; }
+      if (!data) { lastLoadFailReason = 'コールバック呼び出しはあったが data が空'; resolve(null); return; }
+      if (data.error || data.success === false) {
+        lastLoadFailReason = 'GASがエラー応答を返しました: ' + (data.error || JSON.stringify(data).slice(0,200));
+        resolve(null);
+        return;
+      }
+      // tasks 必須は緩める（カタログだけ持つデータでも受け入れる）
+      if (!data.tasks && !data.catalogs && !data.masters) {
+        lastLoadFailReason = '応答にtasks/catalogs/mastersのいずれも含まれません: ' + JSON.stringify(data).slice(0,200);
+        resolve(null);
+        return;
+      }
+      lastLoadFailReason = '';
       resolve(data);
     };
-    script.onerror = function() { cleanup(); resolve(null); };
+    script.onerror = function() {
+      cleanup();
+      lastLoadFailReason = 'JSONPスクリプトのロードに失敗（CORS / ログイン要求 / URL誤り / 構文エラー の可能性）';
+      resolve(null);
+    };
     script.src = makeGasUrlWithQuery({ action: 'load', callback: callbackName, ts: Date.now() });
     document.body.appendChild(script);
-    setTimeout(() => { cleanup(); resolve(null); }, 10000);
+    setTimeout(() => {
+      if (!done) {
+        lastLoadFailReason = 'JSONPタイムアウト（10秒）';
+        cleanup();
+        resolve(null);
+      }
+    }, 10000);
   });
 }
 
@@ -209,7 +234,9 @@ async function reloadFromSheets() {
   const data = await loadFromSheets();
   if (!data) {
     setSyncUI('error');
-    setGasMsg('読み込みに失敗しました。URL・デプロイ設定を確認してください。', true);
+    const detail = lastLoadFailReason ? `（理由: ${lastLoadFailReason}）` : '';
+    setGasMsg('読み込みに失敗しました。URL・デプロイ設定を確認してください。' + detail
+      + '\n対処：(1) GASのデプロイ権限が「全員（匿名ユーザーを含む）」か確認 (2) 修正後は新しいバージョンで再デプロイ (3) どうしても解決しない場合は GAS の URL を直接ブラウザで開きJSONをコピー → 「JSONを貼り付けて読み込む」をご利用ください。', true);
     return;
   }
   applyRemoteData(data);
@@ -245,6 +272,9 @@ function normalizeTaskForUi(task, idx) {
   const tagsArr = Array.isArray(t.tags) ? t.tags.map(String).filter(Boolean) : [];
   const progress = Math.max(0, Math.min(100, toFiniteNumber(t.progress, 0)));
   const status = ['todo','inprogress','done'].includes(t.status) ? t.status : 'todo';
+  // 別名フィールドの吸収：startDate/endDate / deadline / start_date / end_date
+  const startVal = t.start || t.startDate || t.start_date || '';
+  const endVal   = t.end   || t.endDate   || t.end_date   || t.deadline || '';
   return {
     id,
     title: String(t.title || '無題タスク'),
@@ -256,8 +286,8 @@ function normalizeTaskForUi(task, idx) {
     owners: owners.length ? owners : ['自分'],
     tags: tagsArr,
     progress,
-    start: String(t.start || ''),
-    end:   String(t.end   || t.deadline || '')
+    start: String(startVal || ''),
+    end:   String(endVal   || '')
   };
 }
 
@@ -291,16 +321,26 @@ function applyRemoteData(data) {
   if (!data || typeof data !== 'object') return false;
 
   // マスタを先に反映（タスクの category 検証で必要）
-  if (data.masters && typeof data.masters === 'object') {
-    if (Array.isArray(data.masters.categories) && data.masters.categories.length) {
-      categoryMaster = data.masters.categories.map(c => ({
-        key: String(c.key || c.label || ''),
-        label: String(c.label || c.key || ''),
+  // masters / catalogs / settings.catalogs のどれでも受け取れるように
+  const mastersSrc = (data.masters && typeof data.masters === 'object')
+    ? data.masters
+    : (data.catalogs && typeof data.catalogs === 'object')
+      ? data.catalogs
+      : (data.settings && data.settings.catalogs && typeof data.settings.catalogs === 'object')
+        ? data.settings.catalogs
+        : null;
+
+  if (mastersSrc) {
+    if (Array.isArray(mastersSrc.categories) && mastersSrc.categories.length) {
+      categoryMaster = mastersSrc.categories.map(c => ({
+        // key / id どちらでも受け取る
+        key:   String(c.key || c.id || c.label || ''),
+        label: String(c.label || c.key || c.id || ''),
         color: String(c.color || '#888888')
       })).filter(c => c.key && c.label);
     }
-    if (Array.isArray(data.masters.owners)) ownerMaster = data.masters.owners.map(String);
-    if (Array.isArray(data.masters.tags))   tagMaster   = data.masters.tags.map(String);
+    if (Array.isArray(mastersSrc.owners)) ownerMaster = mastersSrc.owners.map(String);
+    if (Array.isArray(mastersSrc.tags))   tagMaster   = mastersSrc.tags.map(String);
   }
 
   if (Object.prototype.hasOwnProperty.call(data, 'tasks')) {
