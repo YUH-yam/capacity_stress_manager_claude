@@ -1,7 +1,28 @@
 // ==================== WBS (Timeline) ====================
 
+// 表示モード："gantt"（横スクロール式タイムライン） / "list"（カード一覧）
+// 既定はモバイルで list、デスクトップで gantt。localStorage で記憶。
+let wbsViewMode = (function () {
+  try {
+    const saved = localStorage.getItem('csm_wbs_view');
+    if (saved === 'list' || saved === 'gantt') return saved;
+  } catch(e) {}
+  return (typeof window !== 'undefined' && window.matchMedia && window.matchMedia('(max-width: 640px)').matches)
+    ? 'list' : 'gantt';
+})();
+
+function setWbsView(mode) {
+  wbsViewMode = (mode === 'list') ? 'list' : 'gantt';
+  try { localStorage.setItem('csm_wbs_view', wbsViewMode); } catch(e) {}
+  renderWBS();
+}
+
 function renderWBS() {
   const el = document.getElementById('wbsContent'); if (!el) return;
+  return (wbsViewMode === 'list') ? renderWBSList(el) : renderWBSGantt(el);
+}
+
+function renderWBSGantt(el) {
 
   const CATS = getCatLabelMap();
   const CAT_COLORS = getCatColorMap();
@@ -174,11 +195,8 @@ function renderWBS() {
   const avgProgAll = tasks.length ? Math.round(tasks.reduce((s,t) => s + (t.progress||0), 0) / tasks.length) : 0;
 
   el.innerHTML = `
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;flex-wrap:wrap;gap:6px;">
-      <div style="font-size:13px;font-weight:500;">WBS タイムライン <span style="font-size:11px;font-weight:400;color:var(--text2);">（7日前〜今日〜28日後）</span></div>
-      <div style="font-size:11px;color:var(--text2);">総工数: <strong style="color:var(--text);">${totalAll.toFixed(1)}h</strong> · ${tasks.length}件 · 全体進捗: <strong style="color:var(--text);">${avgProgAll}%</strong></div>
-    </div>
-    <div class="wbs-timeline">
+    ${wbsToolbarHtml(totalAll, avgProgAll)}
+    <div class="wbs-scroll-wrap"><div class="wbs-timeline">
       <div class="wbs-tl-header">
         <div class="wbs-tl-label" style="font-size:10px;color:var(--text2);font-weight:500;justify-content:center;align-items:center;text-align:center;">
           <div style="font-size:9px;color:var(--text3);">月</div>
@@ -191,7 +209,8 @@ function renderWBS() {
         </div>
       </div>
       ${rows}
-    </div>
+    </div></div>
+    <div class="wbs-scroll-hint no-print">← スクロールして全期間を確認 →</div>
     <div style="margin-top:10px;display:flex;gap:14px;font-size:10px;color:var(--text2);flex-wrap:wrap;">
       <span>● 終了日マーカー：<span style="color:#E24B4A;">超過</span> / <span style="color:#EF9F27;">3日以内</span> / <span style="color:#1D9E75;">通常</span></span>
       <span>◆ = 開始日</span>
@@ -200,7 +219,112 @@ function renderWBS() {
     </div>`;
 }
 
+// ----- ツールバー（表示モード切替） -----
+function wbsToolbarHtml(totalAll, avgProgAll) {
+  return `
+    <div class="wbs-toolbar no-print">
+      <div class="wbs-title">
+        <div style="font-size:13px;font-weight:500;">WBS <span style="font-size:11px;font-weight:400;color:var(--text2);">（7日前〜今日〜28日後）</span></div>
+        <div style="font-size:11px;color:var(--text2);">総工数: <strong style="color:var(--text);">${totalAll.toFixed(1)}h</strong> · ${tasks.length}件 · 全体進捗: <strong style="color:var(--text);">${avgProgAll}%</strong></div>
+      </div>
+      <div class="wbs-view-toggle">
+        <button class="${wbsViewMode==='list'?'active':''}" onclick="setWbsView('list')">📋 リスト</button>
+        <button class="${wbsViewMode==='gantt'?'active':''}" onclick="setWbsView('gantt')">📊 ガント</button>
+      </div>
+    </div>`;
+}
+
+// ----- リスト表示（モバイルで見やすい一覧） -----
+function renderWBSList(el) {
+  const CATS = getCatLabelMap();
+  const CAT_COLORS = getCatColorMap();
+  const today = new Date(); today.setHours(0,0,0,0);
+  const stLabel = { todo:'未着手', inprogress:'進行中', done:'完了' };
+  const stColor = { todo:'#378ADD', inprogress:'#1D9E75', done:'#888780' };
+
+  function dayLabel(dateStr, anchor) {
+    if (!dateStr) return '<span style="color:var(--text3);">—</span>';
+    const d = new Date(dateStr); d.setHours(0,0,0,0);
+    const diff = Math.round((d - today) / 86400000);
+    let col = 'var(--text2)';
+    let suffix = '';
+    if (anchor === 'end') {
+      if (diff < 0)       { col = '#E24B4A'; suffix = `（${Math.abs(diff)}日超過）`; }
+      else if (diff === 0){ col = '#EF9F27'; suffix = '（今日）'; }
+      else if (diff <= 3) { col = '#EF9F27'; suffix = `（あと${diff}日）`; }
+      else                { suffix = `（あと${diff}日）`; }
+    } else if (anchor === 'start') {
+      if (diff > 0)       { suffix = `（${diff}日後）`; }
+      else if (diff === 0){ suffix = '（今日）'; }
+      else                { suffix = `（${Math.abs(diff)}日前）`; }
+    }
+    return `<span style="color:${col};font-weight:500;">${dateStr.replace(/-/g,'/')}</span><span style="color:var(--text3);font-size:10px;">${suffix}</span>`;
+  }
+
+  let groups = '';
+  let wbsNo = 1;
+
+  Object.keys(CATS).forEach(cat => {
+    const catTasks = tasks.filter(t => t.category === cat);
+    if (!catTasks.length) return;
+    const totalH  = catTasks.reduce((s,t) => s + (Number(t.effort)||0), 0);
+    const avgProg = Math.round(catTasks.reduce((s,t) => s + (t.progress||0), 0) / catTasks.length);
+
+    groups += `
+      <div class="wbs-list-group">
+        <div class="wbs-list-cat" style="border-left:4px solid ${CAT_COLORS[cat]};">
+          <span style="color:${CAT_COLORS[cat]};font-weight:600;font-size:12px;">■ ${escapeHTML(CATS[cat])}</span>
+          <span style="font-size:11px;color:var(--text2);margin-left:auto;">${catTasks.length}件 · ${totalH.toFixed(1)}h · 平均${avgProg}%</span>
+        </div>
+        ${catTasks.map(t => {
+          const prog = t.progress != null ? t.progress : 0;
+          const progCol = prog >= 100 ? '#888780' : prog >= 60 ? '#1D9E75' : prog >= 30 ? '#EF9F27' : '#378ADD';
+          const q = t.urgency && t.importance ? 'Q1' : !t.urgency && t.importance ? 'Q2' : t.urgency ? 'Q3' : 'Q4';
+          const qCol = q==='Q1'?'#c44':q==='Q2'?'#2563eb':q==='Q3'?'#b45309':'#888';
+          const owners = t.owners || [];
+          return `
+            <div class="wbs-list-task">
+              <div class="wbs-list-head">
+                <span class="wbs-list-no">${String(wbsNo++).padStart(2,'0')}</span>
+                <span class="wbs-list-title" title="${escapeHTML(t.title)}">${escapeHTML(t.title)}</span>
+              </div>
+              <div class="wbs-list-badges">
+                <span class="badge" style="background:${stColor[t.status]}22;color:${stColor[t.status]};">${stLabel[t.status]}</span>
+                <span class="badge" style="background:${qCol}22;color:${qCol};font-weight:600;">${q}</span>
+                <span style="font-size:11px;color:var(--text2);">${Number(t.effort).toFixed(1)}h</span>
+                ${owners.map(o => `<span class="badge" style="background:var(--bg2);color:var(--text2);border:1px solid var(--border);">👤${escapeHTML(o)}</span>`).join('')}
+              </div>
+              <div class="wbs-list-dates">
+                <span class="wbs-list-date-lbl">開始</span>${dayLabel(t.start, 'start')}
+                <span class="wbs-list-date-sep">→</span>
+                <span class="wbs-list-date-lbl">終了</span>${dayLabel(t.end, 'end')}
+              </div>
+              <div class="wbs-list-prog">
+                <div class="wbs-list-progbar"><div class="wbs-list-progfill" style="width:${prog}%;background:${progCol};"></div></div>
+                <span style="font-size:10px;color:${progCol};font-weight:600;min-width:34px;text-align:right;">${prog}%</span>
+              </div>
+            </div>`;
+        }).join('')}
+      </div>`;
+  });
+
+  if (!groups) groups = '<div style="text-align:center;padding:2rem;color:var(--text2);">タスクがありません</div>';
+
+  const totalAll = tasks.reduce((s,t) => s + (Number(t.effort)||0), 0);
+  const avgProgAll = tasks.length ? Math.round(tasks.reduce((s,t) => s + (t.progress||0), 0) / tasks.length) : 0;
+
+  el.innerHTML = `
+    ${wbsToolbarHtml(totalAll, avgProgAll)}
+    <div class="wbs-list">${groups}</div>
+    <div style="margin-top:10px;font-size:10px;color:var(--text2);">
+      ※ ガント表示は「📊 ガント」で切り替え可能です。PDF出力時は自動的にガント表示で印刷されます。
+    </div>`;
+}
+
 function printWBS() {
+  // 印刷時は常にガント表示で出す
+  const prevMode = wbsViewMode;
+  wbsViewMode = 'gantt';
   renderWBS();
   const allPanels = document.querySelectorAll('.panel');
   const prevStates = [];
@@ -211,5 +335,7 @@ function printWBS() {
     window.print();
     allPanels.forEach((p, i) => { if (prevStates[i]) p.classList.add('active'); });
     document.body.classList.remove('print-wbs-only');
+    wbsViewMode = prevMode;
+    renderWBS();
   }, 150);
 }

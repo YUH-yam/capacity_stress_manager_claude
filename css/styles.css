@@ -351,6 +351,96 @@ input[type=range] { min-height: 24px; }
 .prog-edit-row input[type=range] { flex: 1; min-width: 80px; accent-color: var(--green); }
 .task-prog-bar { height: 4px; background: var(--border); border-radius: 2px; margin-top: 5px; }
 .task-prog-fill { height: 4px; border-radius: 2px; background: var(--green); transition: width .3s; }
+/* ===== WBS toolbar (view toggle) ===== */
+.wbs-toolbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10px;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.wbs-title { display: flex; flex-direction: column; gap: 2px; }
+.wbs-view-toggle {
+  display: inline-flex;
+  border: 1px solid var(--border2);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  background: var(--bg2);
+}
+.wbs-view-toggle button {
+  background: transparent;
+  border: none;
+  border-radius: 0;
+  padding: 7px 12px;
+  font-size: 12px;
+  color: var(--text2);
+  min-height: 34px;
+}
+.wbs-view-toggle button + button { border-left: 1px solid var(--border2); }
+.wbs-view-toggle button.active {
+  background: var(--text);
+  color: var(--bg);
+}
+
+/* ===== WBS list view (mobile-friendly) ===== */
+.wbs-list { display: flex; flex-direction: column; gap: 8px; }
+.wbs-list-group {
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  background: var(--bg);
+}
+.wbs-list-cat {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 10px;
+  background: var(--bg2);
+  border-bottom: 1px solid var(--border);
+}
+.wbs-list-task {
+  padding: 9px 10px;
+  border-bottom: 1px solid var(--border);
+}
+.wbs-list-task:last-child { border-bottom: none; }
+.wbs-list-head { display: flex; align-items: center; gap: 6px; margin-bottom: 4px; }
+.wbs-list-no   { color: var(--text3); font-size: 10px; font-family: monospace; flex-shrink: 0; }
+.wbs-list-title { font-size: 13px; font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex: 1; }
+.wbs-list-badges { display: flex; flex-wrap: wrap; gap: 4px; align-items: center; margin-bottom: 5px; }
+.wbs-list-dates {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 4px;
+  font-size: 12px;
+  padding: 5px 7px;
+  background: var(--bg2);
+  border-radius: var(--radius-sm);
+  margin-bottom: 5px;
+}
+.wbs-list-date-lbl { font-size: 10px; color: var(--text2); margin-right: 2px; }
+.wbs-list-date-sep { color: var(--text3); margin: 0 3px; }
+.wbs-list-prog { display: flex; align-items: center; gap: 6px; }
+.wbs-list-progbar { flex: 1; height: 5px; background: var(--border); border-radius: 3px; overflow: hidden; }
+.wbs-list-progfill { height: 5px; border-radius: 3px; transition: width .3s; }
+
+/* ===== WBS gantt scroll wrapper ===== */
+.wbs-scroll-wrap {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  border-radius: var(--radius-md);
+}
+.wbs-scroll-wrap::-webkit-scrollbar { height: 8px; }
+.wbs-scroll-wrap::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 4px; }
+.wbs-scroll-hint {
+  display: none;
+  text-align: center;
+  font-size: 10px;
+  color: var(--text3);
+  margin-top: 4px;
+}
+
 /* WBS Timeline */
 .wbs-timeline { font-size: 12px; border: 1px solid var(--border); border-radius: var(--radius-md); overflow: hidden; }
 .wbs-tl-header, .wbs-tl-task, .wbs-tl-cat {
@@ -504,13 +594,32 @@ body.printing-all #p-export, body.printing-all #p-settings { display: none !impo
   .form-row { grid-template-columns: 1fr; }
   .stat .value { font-size: 19px; }
   .tab { padding: 10px 12px; }
-  .wbs-tl-label { width: 130px; font-size: 10px; padding: 5px 6px; }
   .smx-table { min-width: 360px; }
   .task-item { padding: 11px 12px; }
   .task-actions { flex-direction: row; flex-wrap: wrap; }
+
+  /* Gantt：横スクロール + ラベル列を sticky で固定 */
+  .wbs-timeline { min-width: 760px; } /* 35日 × ~18px ぐらいの密度を確保 */
+  .wbs-tl-label {
+    width: 150px; font-size: 10px; padding: 5px 6px;
+    position: sticky; left: 0; z-index: 4;
+    background: var(--bg);
+    box-shadow: 1px 0 0 var(--border);
+  }
+  .wbs-tl-cat .wbs-tl-label { background: var(--bg2); }
+  .wbs-tl-header .wbs-tl-label { background: var(--bg2); }
+  .wbs-scroll-hint { display: block; }
 }
 
 @media (max-width: 380px) {
   .stat-grid { grid-template-columns: repeat(2, 1fr); }
-  .wbs-tl-label { width: 110px; font-size: 9px; }
+  .wbs-tl-label { width: 120px; font-size: 9px; }
+  .wbs-timeline { min-width: 680px; }
+}
+
+/* 印刷時はlist viewを隠してgantt表示前提に */
+@media print {
+  .wbs-toolbar, .wbs-scroll-hint { display: none !important; }
+  .wbs-scroll-wrap { overflow: visible !important; }
+  .wbs-tl-label { position: static !important; box-shadow: none !important; }
 }

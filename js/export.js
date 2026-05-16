@@ -1,6 +1,9 @@
 // ==================== EXPORT / IMPORT / PRINT ====================
 
 function printAll() {
+  // 印刷時はWBSをガント表示に強制
+  const prevMode = typeof wbsViewMode !== 'undefined' ? wbsViewMode : 'gantt';
+  if (typeof wbsViewMode !== 'undefined') wbsViewMode = 'gantt';
   renderWBS();
   document.body.classList.add('printing-all');
   const visiblePanels = ['p-dash','p-tasks','p-wbs','p-stress'];
@@ -11,6 +14,10 @@ function printAll() {
     document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
     document.getElementById('p-export')?.classList.add('active');
     document.body.classList.remove('printing-all');
+    if (typeof wbsViewMode !== 'undefined') {
+      wbsViewMode = prevMode;
+      renderWBS();
+    }
   }, 200);
 }
 
